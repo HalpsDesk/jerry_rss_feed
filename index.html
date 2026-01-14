@@ -1,35 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Jerry Kendrick RSS Feed Viewer</title>
-<style>
-body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    margin: 0;
-}
-.item {
-    margin-bottom: 20px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid #ccc;
-}
-.item h3 {
-    margin: 0 0 6px 0;
-    font-size: 18px;
-}
-.item a {
-    color: #0066cc;
-    text-decoration: none;
-}
-.item a:hover {
-    text-decoration: underline;
-}
-.item p {
-    margin: 0;
-    color: #444;
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Jerry Kendrick – Recent Posts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+    .item {
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #ccc;
+    }
+    .item h3 {
+      margin: 0 0 6px 0;
+      font-size: 18px;
+    }
+    .item a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    .item a:hover {
+      text-decoration: underline;
+    }
+    .item p {
+      margin: 0;
+      color: #444;
+    }
+  </style>
 </head>
 <body>
 
@@ -38,27 +38,57 @@ body {
 
 <script>
 async function loadFeed() {
-    const api = "https://jerry-rss-feed.jthalpenny.workers.dev/";
-    const container = document.getElementById("rss");
+  const api = "https://jerry-rss-feed.jthalpenny.workers.dev/";
+  const container = document.getElementById("rss");
 
-    try {
-        const res = await fetch(api);
-        const text = await res.text();
+  try {
+    const res = await fetch(api);
 
-        // Just show the raw response inside a <pre> so it's readable
-        const pre = document.createElement("pre");
-        pre.style.whiteSpace = "pre-wrap";
-        pre.textContent = text;
-        container.appendChild(pre);
-
-    } catch (err) {
-        container.textContent = "Unable to load feed.";
+    if (!res.ok) {
+      container.textContent = "Feed error: HTTP " + res.status;
+      return;
     }
+
+    const xmlText = await res.text();
+
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(xmlText, "application/xml");
+
+    // Check for parser errors
+    if (xml.getElementsByTagName("parsererror").length) {
+      container.textContent = "Feed parse error.";
+      return;
+    }
+
+    const items = Array.from(xml.querySelectorAll("channel > item"));
+
+    if (items.length === 0) {
+      container.textContent = "No posts found.";
+      return;
+    }
+
+    // Show up to 10 posts
+    items.slice(0, 10).forEach(item => {
+      const title = item.querySelector("title")?.textContent || "";
+      const link = item.querySelector("link")?.textContent || "#";
+      const description = item.querySelector("description")?.textContent || "";
+
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <h3><a href="${link}" target="_blank" rel="noopener noreferrer">${title}</a></h3>
+        <p>${description}</p>
+      `;
+      container.appendChild(div);
+    });
+
+  } catch (err) {
+    container.textContent = "Unable to load feed.";
+  }
 }
 
 loadFeed();
 </script>
-
 
 </body>
 </html>
