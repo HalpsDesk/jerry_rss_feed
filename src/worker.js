@@ -1,34 +1,40 @@
 export default {
   async fetch(request, env, ctx) {
-    const feedUrl = "https://feeds.feedburner.com/jerrykendrick/jb2wu029zbs";
+    // WordPress REST API endpoint for recent posts
+    const apiUrl =
+      "https://jerrykendrick.com/wp-json/wp/v2/posts" +
+      "?per_page=10&_fields=link,title,excerpt";
 
     try {
-      const originResp = await fetch(feedUrl, {
+      const originResp = await fetch(apiUrl, {
         headers: {
-          // Pretend to be a normal browser asking for RSS/XML
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept":
-            "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8"
+          "Accept": "application/json"
         }
       });
 
-      const text = await originResp.text();
+      const text = await originResp.text(); // keep as text, pass through as JSON
 
       return new Response(text, {
         status: originResp.status,
         headers: {
-          // Don’t trust origin content-type; force XML-ish
-          "Content-Type": "application/xml; charset=utf-8",
+          "Content-Type": "application/json; charset=utf-8",
           "Access-Control-Allow-Origin": "*"
         }
       });
     } catch (e) {
-      return new Response("Error fetching feed", {
-        status: 500,
-        headers: { "Access-Control-Allow-Origin": "*" }
-      });
+      return new Response(
+        JSON.stringify({ error: "Error fetching posts" }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*"
+          }
+        }
+      );
     }
   }
 };
