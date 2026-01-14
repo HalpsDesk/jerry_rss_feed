@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>RSS Feed Viewer</title>
+<style>
+body { font-family: Arial, sans-serif; padding: 20px; }
+.feed-item { margin-bottom: 16px; border-bottom: 1px solid #ccc; padding-bottom: 12px; }
+.feed-item h3 { margin: 0; font-size: 18px; }
+.feed-item p { margin: 4px 0 0; color: #444; }
+</style>
+</head>
+<body>
+
+<h2>RSS Feed</h2>
+<div id="feed"></div>
+
+<script>
+async function loadRSS() {
+    const rssUrl = "https://jerrykendrick.com/feed/";
+
+    const apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(rssUrl);
+
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(data.contents, "text/xml");
+
+    const items = xml.querySelectorAll("item");
+    const feedDiv = document.getElementById("feed");
+
+    items.forEach(item => {
+        const title = item.querySelector("title").textContent;
+        const link = item.querySelector("link").textContent;
+        const description = item.querySelector("description")?.textContent || "";
+
+        const div = document.createElement("div");
+        div.className = "feed-item";
+        div.innerHTML = `
+            <h3><a href="${link}" target="_blank">${title}</a></h3>
+            <p>${description}</p>
+        `;
+        feedDiv.appendChild(div);
+    });
+}
+
+loadRSS();
+</script>
+
+</body>
+</html>
