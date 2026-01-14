@@ -1,6 +1,6 @@
 export default {
   async fetch(request, env, ctx) {
-    const feedUrl = "https://jerrykendrick.com/feed/";
+    const feedUrl = "https://feeds.feedburner.com/jerrykendrick/jb2wu029zbs";
 
     try {
       const originResp = await fetch(feedUrl, {
