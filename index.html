@@ -38,17 +38,23 @@ body {
 
 <script>
 async function loadFeed() {
-    // Call your Cloudflare Worker, not the original RSS URL directly
-    const api = "jerry-rss-feed.jthalpenny.workers.dev";
+    const api = "https://jerry-rss-feed.jthalpenny.workers.dev/";
 
     try {
         const res = await fetch(api);
         const xmlText = await res.text();
 
         const parser = new DOMParser();
-        const xml = parser.parseFromString(xmlText, "application/xml");
+        const xml = parser.parseFromString(xmlText, "text/xml");
 
-        const items = xml.querySelectorAll("item");
+        // Try RSS <item> first
+        let items = Array.from(xml.querySelectorAll("item"));
+
+        // If none, try Atom <entry>
+        if (items.length === 0) {
+            items = Array.from(xml.querySelectorAll("entry"));
+        }
+
         const container = document.getElementById("rss");
 
         if (!items.length) {
@@ -56,10 +62,29 @@ async function loadFeed() {
             return;
         }
 
-        items.forEach(item => {
-            const title = item.querySelector("title")?.textContent || "";
-            const link = item.querySelector("link")?.textContent || "#";
-            const description = item.querySelector("description")?.textContent || "";
+        items.forEach(node => {
+            // RSS vs Atom field handling
+            const titleNode = node.querySelector("title");
+            const linkNode = node.querySelector("link");
+            const summaryNode =
+                node.querySelector("description") ||
+                node.querySelector("summary") ||
+                node.querySelector("content");
+
+            let title = titleNode ? titleNode.textContent : "";
+            let link = "#";
+
+            if (linkNode) {
+                if (linkNode.getAttribute && linkNode.getAttribute("href")) {
+                    // Atom: <link rel="alternate" href="...">
+                    link = linkNode.getAttribute("href");
+                } else {
+                    // RSS: <link>https://...</link>
+                    link = linkNode.textContent;
+                }
+            }
+
+            let description = summaryNode ? summaryNode.textContent : "";
 
             const div = document.createElement("div");
             div.className = "item";
@@ -78,6 +103,7 @@ async function loadFeed() {
 
 loadFeed();
 </script>
+
 
 </body>
 </html>
