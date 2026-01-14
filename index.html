@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Jerry Kendrick RSS Feed Viewer</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    margin: 0;
+}
+.item {
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #ccc;
+}
+.item h3 {
+    margin: 0 0 6px 0;
+    font-size: 18px;
+}
+.item a {
+    color: #0066cc;
+    text-decoration: none;
+}
+.item a:hover {
+    text-decoration: underline;
+}
+.item p {
+    margin: 0;
+    color: #444;
+}
+</style>
+</head>
+<body>
+
+<h2>Jerry Kendrick – Recent Posts</h2>
+<div id="rss"></div>
+
+<script>
+async function loadFeed() {
+    // Call your Cloudflare Worker, not the original RSS URL directly
+    const api = "jerry-rss-feed.jthalpenny.workers.dev";
+
+    try {
+        const res = await fetch(api);
+        const xmlText = await res.text();
+
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(xmlText, "application/xml");
+
+        const items = xml.querySelectorAll("item");
+        const container = document.getElementById("rss");
+
+        if (!items.length) {
+            container.textContent = "No items found in the feed.";
+            return;
+        }
+
+        items.forEach(item => {
+            const title = item.querySelector("title")?.textContent || "";
+            const link = item.querySelector("link")?.textContent || "#";
+            const description = item.querySelector("description")?.textContent || "";
+
+            const div = document.createElement("div");
+            div.className = "item";
+            div.innerHTML = `
+                <h3><a href="${link}" target="_blank" rel="noopener noreferrer">${title}</a></h3>
+                <p>${description}</p>
+            `;
+            container.appendChild(div);
+        });
+
+    } catch (err) {
+        document.getElementById("rss").textContent =
+            "Unable to load RSS feed.";
+    }
+}
+
+loadFeed();
+</script>
+
+</body>
+</html>
