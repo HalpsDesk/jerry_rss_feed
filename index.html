@@ -35,40 +35,36 @@ body {
 </head>
 <body>
 
-<h2>Jerry Kendrick – Recent Posts</h2>
+<h2>Jerry's Jams & Notions</h2>
 <div id="rss"></div>
 
 <script>
 async function loadFeed() {
     const feedURL = "https://jerrykendrick.com/feed/";
 
-    // Free public CORS passthrough
-    const api = "https://api.allorigins.win/get?url=" + encodeURIComponent(feedURL);
+    const api = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(feedURL);
 
     try {
         const res = await fetch(api);
         const data = await res.json();
 
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(data.contents, "application/xml");
+        if (!data.items) {
+            document.getElementById("rss").innerHTML = "Feed could not be parsed.";
+            return;
+        }
 
-        const items = xml.querySelectorAll("item");
         const container = document.getElementById("rss");
 
-        items.forEach(i => {
-            const title = i.querySelector("title")?.textContent || "";
-            const link = i.querySelector("link")?.textContent || "#";
-            const description = i.querySelector("description")?.textContent || "";
-
+        data.items.forEach(item => {
             const div = document.createElement("div");
             div.className = "item";
             div.innerHTML = `
-                <h3><a href="${link}" target="_blank">${title}</a></h3>
-                <p>${description}</p>
+                <h3><a href="${item.link}" target="_blank">${item.title}</a></h3>
+                <p>${item.description}</p>
             `;
-
             container.appendChild(div);
         });
+
     } catch (err) {
         document.getElementById("rss").innerHTML = "Unable to load RSS feed.";
     }
@@ -76,6 +72,7 @@ async function loadFeed() {
 
 loadFeed();
 </script>
+
 
 </body>
 </html>
